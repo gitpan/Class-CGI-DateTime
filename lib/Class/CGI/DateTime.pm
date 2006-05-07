@@ -1,5 +1,7 @@
 package Class::CGI::DateTime;
 
+use base 'Class::CGI::Handler';
+
 use warnings;
 use strict;
 use DateTime;
@@ -10,11 +12,11 @@ Class::CGI::DateTime - Fetch DateTime objects directly from your forms.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -139,36 +141,35 @@ For example:
       }
   }
 
+If a date is required, it's easy to handle this:
+
+  use Class::CGI
+    handlers => {
+        date       => 'Class::CGI::DateTime',
+        order_date => 'Class::CGI::DateTime',
+    };
+  my $cgi        = Class::CGI->new;
+  $cgi->required( qw/date order_date/ );
+  my $date       = $cgi->param('date');
+  my $order_date = $cgi->param('order_date');
+
+C<Class::CGI::DateTime> will not create a date object if any of the required
+components (day, month, year and so on) are missing.  Further, a descriptive
+error message will be set.
+
 Also note that at the present time, C<Class::CGI::DateTime> only ensures that
 we can create a valid C<DateTime> object.  Application-specific validation
 (such as ensuring the date is in the future) belongs in your application and
 should be handled there.
 
-=head1 METHODS
-
-C<Class::CGI> handlers are required to provide only one method, C<new>.  All
-other methods are optional.
-
-=head2 new
-
- my $datetime = Class::CGI::DateTime->new( $cgi, $param_name );
-
-Takes the C<Class::CGI> object and the name of the parameter requested.
-Attempts to untaint the CGI data and return a C<DateTime> object.
-
 =cut
 
-sub new {
-    my ( $class, $cgi, $param ) = @_;
+sub handle {
+    my $self  = shift;
+    my $cgi   = $self->cgi;
+    my $param = $self->param;
 
-    my $requested_params = $cgi->args($param);
-    my @params = $requested_params 
-      ? @{ $requested_params->{params} }
-      : qw(day month year);
-
-    if ( 'date' ne $param ) {
-        @params = map {"$param.$_"} @params;
-    }
+    my @params = $self->components;
 
     # original param name and param value
     my %args = map { /([[:word:]]+)$/; $1, $cgi->raw_param($_) } @params;
@@ -184,7 +185,35 @@ sub new {
             $args{$arg} = $1;
         }
     }
-    return DateTime->new(%args);
+    my $datetime;
+ 
+    eval { $datetime = DateTime->new(%args) };
+
+    if (my $error = $@) {
+        $cgi->add_error( $param, 'You must supply a valid date' );
+    }
+    return $datetime;
+}
+
+sub components {
+    my $self  = shift;
+    my $cgi   = $self->cgi;
+    my $param = $self->param;
+
+    my $requested_params = $cgi->args($param);
+    my @params = $requested_params 
+      ? @{ $requested_params->{params} }
+      : qw(day month year);
+
+    if ( 'date' ne $param ) {
+        @params = map {"$param.$_"} @params;
+    }
+    return @params;
+}
+
+sub has_param {
+    my $self = shift;
+    return $self->has_virtual_param( $self->param, $self->components );
 }
 
 =head1 AUTHOR

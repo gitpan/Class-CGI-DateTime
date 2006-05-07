@@ -1,6 +1,6 @@
 #!perl -T
 
-use Test::More tests => 36;
+use Test::More tests => 44;
 
 #use Test::More qw/no_plan/;
 use Test::Exception;
@@ -25,6 +25,23 @@ isa_ok $date, 'DateTime', '... and the object it returns';
 is $date->day,   2,    '... and the day should be correct';
 is $date->month, 11,   '... as should the month';
 is $date->year,  1997, '... and the year';
+
+# test that missing components are handled correctly
+
+$params = {
+    day  => 2,
+    year => 1997,
+};
+
+$cgi = Class::CGI->new($params);
+$cgi->required('date');
+ok !( $date = $cgi->param('date') ),
+  'Fetching the date object should succeed';
+ok $cgi->is_missing_required('date'),
+  '... and the date should be reported as missing';
+ok my $errors = $cgi->errors, '... and errors should be reported';
+is $errors->{date}, 'The &#39;date&#39; is missing values for (month)',
+  '... with the correct error message';
 
 # Make sure that bad dates aren't swallowed
 
@@ -55,6 +72,24 @@ isa_ok $date, 'DateTime', '... and the object it returns';
 is $date->day,   2,    '... and the day should be correct';
 is $date->month, 5,    '... as should the month';
 is $date->year,  1997, '... and the year';
+
+# test that missing components are handled correctly
+
+$params = {
+    'order_date.day'  => 2,
+    'order_date.year' => 1997,
+};
+
+$cgi = Class::CGI->new($params);
+$cgi->required('order_date');
+ok !( $date = $cgi->param('order_date') ),
+  'Fetching the date object should succeed';
+ok $cgi->is_missing_required('order_date'),
+  '... and the order_date should be reported as missing';
+ok $errors = $cgi->errors, '... and errors should be reported';
+is $errors->{order_date},
+  'The &#39;order_date&#39; is missing values for (order_date.month)',
+  '... with the correct error message';
 
 $params = {
     year       => 1964,

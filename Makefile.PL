@@ -5,7 +5,7 @@ WriteMakefile
   'NAME' => 'Class::CGI::DateTime',
   'VERSION_FROM' => 'lib/Class/CGI/DateTime.pm',
   'PREREQ_PM' => {
-    'Class::CGI' => '0.14',
+    'Class::CGI' => '0.2',
     'DateTime' => '0.3',
     'Scalar::Util' => '',
     'Test::More' => '0'

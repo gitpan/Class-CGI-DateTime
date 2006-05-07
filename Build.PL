@@ -9,7 +9,7 @@ my $builder = Module::Build->new(
     dist_version_from => 'lib/Class/CGI/DateTime.pm',
     requires          => {
         'Test::More'   => 0,
-        'Class::CGI'   => 0.14,
+        'Class::CGI'   => 0.20,
         'DateTime'     => 0.30,
         'Scalar::Util' => '',     # Does the version matter for this?
     },
